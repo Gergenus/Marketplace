@@ -1,16 +1,11 @@
 package models
 
-type Seller struct {
-	ID       int
-	Name     string
-	Location string
-	License  string
-}
+import "github.com/google/uuid"
 
-type Product struct {
-	ID          int
-	ProductName string
-	Price       float64
-	SellerID    int
-	CategoryID  int
+type User struct {
+	ID       uuid.UUID `json:"id,omitempty"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	Role     string    `json:"role"`
+	Password string    `json:"password"`
 }

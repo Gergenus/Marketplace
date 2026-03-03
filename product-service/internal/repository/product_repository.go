@@ -187,6 +187,19 @@ func (p *PostgresRepository) GetProductByID(ctx context.Context, id int) (models
 	return product, nil
 }
 
+func (p *PostgresRepository) CheckProductExists(ctx context.Context, seller_id int, product_name string) (bool, error) {
+	const op = "repository.CheckProductExists"
+	var id int
+	err := p.db.DB.QueryRow(ctx, "SELECT id FROM product_list WHERE product_name = $1 AND seller_id = $2", product_name, seller_id).Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return true, nil
+		}
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return false, nil
+}
+
 func (p *PostgresRepository) GetProductsByCategory(ctx context.Context, category string) ([]models.Product, error) {
 	const op = "repository.GetProductsByCategory"
 

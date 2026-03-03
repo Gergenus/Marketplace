@@ -1,17 +1,17 @@
 package dbpkg
 
 import (
-	"database/sql"
+	"context"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PostgresDB struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
 func InitDB(dbUrl string) PostgresDB {
-	db, err := sql.Open("postgres", dbUrl)
+	db, err := pgxpool.New(context.Background(), dbUrl)
 	if err != nil {
 		panic("database does not work: " + err.Error())
 	}

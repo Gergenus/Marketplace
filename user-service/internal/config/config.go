@@ -9,6 +9,8 @@ import (
 type Config struct {
 	PostgresURL string
 	LogLevel    string
+	HTTPPort    string
+	JWTSecret   string
 }
 
 func InitConfig() Config {
@@ -19,5 +21,7 @@ func InitConfig() Config {
 	return Config{
 		PostgresURL: os.Getenv("PostgresURL"),
 		LogLevel:    os.Getenv("LogLevel"),
+		HTTPPort:    os.Getenv("HTTPPort"),
+		JWTSecret:   os.Getenv("JWTSecret"),
 	}
 }

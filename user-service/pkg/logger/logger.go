@@ -5,13 +5,14 @@ import (
 	"os"
 )
 
-func SetupLogger(level string) *slog.Logger {
-	switch level {
+func SetUp(logLevel string) *slog.Logger {
+	switch logLevel {
 	case "debug":
 		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	case "info":
+	case "prod":
 		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	default:
-		panic("incorrect logger level")
+		panic("incorrect loglevel")
 	}
+
 }
