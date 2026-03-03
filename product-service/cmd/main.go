@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/Gergenus/commerce/product-service/internal/config"
-	"github.com/Gergenus/commerce/product-service/internal/models"
 	"github.com/Gergenus/commerce/product-service/internal/repository"
 	dbpkg "github.com/Gergenus/commerce/product-service/pkg/db"
 )
@@ -30,14 +28,31 @@ func main() {
 	// }
 
 	// e.Start(":" + cfg.HTTPPort)
-	z, err := repo.AddCategory(context.Background(), "SVO")
-	if err != nil {
-		log.Println(err)
-	}
+	// repo.AddCategory(context.Background(), "SVO")
+	// repo.AddCategory(context.Background(), "GAY")
+	// z, err := repo.CreateProduct(context.Background(), models.Product{ProductName: "SEX", Price: 300.5, SellerID: 1488, CategoryID: 1})
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// _, err = repo.CreateProduct(context.Background(), models.Product{ProductName: "FISTING", Price: 300.5, SellerID: 1488, CategoryID: 1})
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// _, err = repo.CreateProduct(context.Background(), models.Product{ProductName: "ASS", Price: 300.5, SellerID: 1488, CategoryID: 2})
+	// if err != nil {
+	// 	log.Println(err)
+	// }
+	// fmt.Println(z)
+	// model, err := repo.GetProductsByCategory(context.Background(), "GAY")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(model)
+	z, err := repo.GetProductByID(context.Background(), 9)
 	fmt.Println(z)
-	id, err := repo.CreateProduct(context.Background(), models.Product{ProductName: "ТАНК", Price: 5000.5, SellerID: 5, CategoryID: 1})
+	svo, err := repo.AddStockByID(context.Background(), 1488, 9, 150)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
-	fmt.Println(id)
+	fmt.Println(svo)
 }
