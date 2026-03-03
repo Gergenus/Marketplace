@@ -7,14 +7,14 @@ CREATE TABLE categories (
 
 CREATE TABLE product_list (
     id BIGSERIAL PRIMARY KEY,
-    product_name VARCHAR(255) NOT NULL,
+    product_name VARCHAR(255) NOT NULL UNIQUE,
     price DOUBLE PRECISION NOT NULL,
-    seller_id INT UNIQUE NOT NULL,
+    seller_id INT NOT NULL,
     category_id INT REFERENCES categories(id) ON DELETE CASCADE
 );
 
 CREATE TABLE stock (
-    seller_id INT UNIQUE NOT NULL,
+    seller_id INT NOT NULL,
     product_id INT REFERENCES product_list(id) ON DELETE CASCADE,
     stock INT default 0
 );

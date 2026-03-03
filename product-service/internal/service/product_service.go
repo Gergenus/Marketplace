@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/Gergenus/commerce/user-service/internal/repository"
+	"github.com/Gergenus/commerce/product-service/internal/repository"
 )
 
 type ProductService struct {

@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/Gergenus/commerce/user-service/internal/models"
-	"github.com/Gergenus/commerce/user-service/internal/service"
+	"github.com/Gergenus/commerce/product-service/internal/models"
+	"github.com/Gergenus/commerce/product-service/internal/service"
 	"github.com/labstack/echo/v4"
 )
 
