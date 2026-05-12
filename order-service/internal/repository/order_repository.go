@@ -41,7 +41,7 @@ func (o *OrderRepository) CreateOrder(ctx context.Context, userId uuid.UUID, pri
 func (o *OrderRepository) FillOrder(ctx context.Context, orderId int, products []models.OrderProduct) error {
 	const op = "repository.FillOrder"
 	for _, product := range products {
-		_, err := o.db.DB.Exec(ctx, "INSERT INTO order_goods (order_id, product_id, seller_id, quantity, delivery_address) VALUES($1, $2, $3, $4, $5)", orderId, product.ID, product.SellerID.String(), product.Stock, product.DeliveryAddress)
+		_, err := o.db.DB.Exec(ctx, "INSERT INTO order_goods (order_id, product_id, seller_id, quantity) VALUES($1, $2, $3, $4)", orderId, product.ID, product.SellerID.String(), product.Stock)
 		if err != nil {
 			return fmt.Errorf("%s: %w", op, err)
 		}
