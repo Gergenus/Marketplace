@@ -7,11 +7,14 @@ import (
 
 	"github.com/Gergenus/commerce/product-service/internal/models"
 	"github.com/Gergenus/commerce/product-service/internal/service"
+	"github.com/Gergenus/commerce/product-service/proto"
 	"github.com/labstack/echo/v4"
 )
 
 type ProductHandler struct {
 	service service.ServiceInterface
+	proto.UnimplementedAvailablilityServiceServer
+	proto.UnimplementedOrderServiceServer
 }
 
 func NewProductHandler(service service.ServiceInterface) ProductHandler {
@@ -32,6 +35,11 @@ func (p *ProductHandler) AddCategory(c echo.Context) error {
 
 	id, err := p.service.AddCategory(c.Request().Context(), category.Category)
 	if err != nil {
+		if errors.Is(err, service.ErrCategoryAlreadyExists) {
+			return c.JSON(http.StatusBadRequest, map[string]any{
+				"error": "category already exists",
+			})
+		}
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
 			"error": "Internal error",
 		})
@@ -42,12 +50,6 @@ func (p *ProductHandler) AddCategory(c echo.Context) error {
 }
 
 func (p *ProductHandler) CreateProduct(c echo.Context) error {
-	if c.Get("role") == "" || c.Get("role") != "seller" {
-		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-			"error": "unsuitable role",
-		})
-	}
-
 	var product models.Product
 	err := c.Bind(&product)
 	if err != nil {
@@ -55,10 +57,10 @@ func (p *ProductHandler) CreateProduct(c echo.Context) error {
 			"error": "Invalid request payload",
 		})
 	}
-	sellerID, ok := c.Get("seller_id").(int)
+	sellerID, ok := c.Get("uuid").(string)
 	if !ok {
-		return c.JSON(http.StatusBadRequest, map[string]interface{}{
-			"error": "claims error",
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"error": "unauthorized",
 		})
 	}
 	product.SellerID = sellerID
@@ -66,13 +68,12 @@ func (p *ProductHandler) CreateProduct(c echo.Context) error {
 	if err != nil {
 		if errors.Is(err, service.ErrMoreThanOneProductInstance) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
-				"error": service.ErrMoreThanOneProductInstance.Error(),
+				"error": "more than one instance of a product",
 			})
 		}
 		if errors.Is(err, service.ErrNoSuchCategoryExists) {
 			return c.JSON(http.StatusBadRequest, map[string]interface{}{
-				"error":       service.ErrNoSuchCategoryExists.Error(),
-				"category_id": product.CategoryID,
+				"error": "no such category exists",
 			})
 		}
 		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
@@ -86,7 +87,7 @@ func (p *ProductHandler) CreateProduct(c echo.Context) error {
 
 func (p *ProductHandler) GetStockByID(c echo.Context) error {
 	productIdString := c.QueryParam("product_id")
-	sellerId := c.Get("seller_id").(int)
+	sellerId := c.Get("uuid").(string)
 
 	productId, err := strconv.Atoi(productIdString)
 	if err != nil {
@@ -94,7 +95,7 @@ func (p *ProductHandler) GetStockByID(c echo.Context) error {
 			"error": "Invalid request payload",
 		})
 	}
-	stock, err := p.service.GetStockByID(c.Request().Context(), productId, sellerId)
+	stock, err := p.service.GetStockByID(c.Request().Context(), productId)
 	if err != nil {
 		if errors.Is(err, service.ErrStockNotFound) {
 			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
@@ -114,7 +115,7 @@ func (p *ProductHandler) GetStockByID(c echo.Context) error {
 
 func (p *ProductHandler) AddStockByID(c echo.Context) error {
 	var stockReq models.AddStockRequest
-	sellerID := c.Get("seller_id").(int)
+	sellerID := c.Get("uuid").(string)
 	err := c.Bind(&stockReq)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -154,4 +155,32 @@ func (p *ProductHandler) GetProductByID(c echo.Context) error {
 		})
 	}
 	return c.JSON(http.StatusOK, product)
+}
+
+func (p *ProductHandler) Products(c echo.Context) error {
+	query := c.QueryParam("search_query")
+	if query == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "bad request",
+		})
+	}
+	page := c.QueryParam("page")
+	if page == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "bad request",
+		})
+	}
+	pageSize := c.QueryParam("page_size")
+	if pageSize == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "bad request",
+		})
+	}
+	products, err := p.service.Products(c.Request().Context(), query, page, pageSize)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "internal error",
+		})
+	}
+	return c.JSON(http.StatusOK, products)
 }

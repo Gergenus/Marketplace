@@ -15,13 +15,13 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS refreshSessions (
-    "id" SERIAL PRIMARY KEY,
-    "userId" uuid REFERENCES users(id) ON DELETE CASCADE,
-    "refreshToken" uuid NOT NULL,
-    "fingerprint" character varying(200) NOT NULL,
-    "ip" character varying(15) NOT NULL,
-    "expiresIn" bigint NOT NULL,
-    "createdAt" timestamp with time zone NOT NULL DEFAULT now()
+    id SERIAL PRIMARY KEY,
+    userId uuid REFERENCES users(id) ON DELETE CASCADE,
+    refreshToken uuid NOT NULL,
+    fingerprint character varying(200) NOT NULL,
+    ip character varying(15) NOT NULL,
+    expiresIn bigint NOT NULL,
+    createdAt timestamp with time zone NOT NULL DEFAULT now()
 );
 -- +goose StatementEnd
 

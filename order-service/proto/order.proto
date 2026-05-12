@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package= "github.com/Gergenus/commerce/order-service/proto";
+
+package proto;
+
+service OrderService {
+  rpc GetCart(getCartRequest) returns (getCartResponse) {} // to cart-service
+  rpc ReserveOrder(ReserveOrderRequest) returns (ReserveOrderResponse) {} // to product-service
+}
+
+message getCartRequest {
+  string user_id = 1;
+}
+
+message getCartResponse {
+  bool availablility = 1;
+  repeated orderProduct orderProducts = 2;
+}
+
+message orderProduct {
+  int64 product_id = 1;
+  int64 stock = 2;
+}
+
+// RESERVE REQUEST
+
+
+message ReserveOrderRequest {
+  repeated orderProduct orderProducts = 1;
+}
+
+message ReserveOrderResponse {
+  bool isReserved = 1;
+  float price = 2;
+  repeated productSeller productsSeller = 3;
+}
+
+message productSeller {
+  int64 product_id = 1;
+  int64 stock = 2;
+  string seller_id = 3;
+}
+

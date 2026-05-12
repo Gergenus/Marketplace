@@ -73,10 +73,31 @@ func (p *PostgresRepository) DeleteCategoryByID(ctx context.Context, id int) err
 	return nil
 }
 
-func (p *PostgresRepository) GetStockByID(ctx context.Context, product_id, seller_id int) (int, error) {
+func (p *PostgresRepository) AllProducts(ctx context.Context) ([]*models.Product, error) {
+	const op = "repository.AllProducts"
+	products := []*models.Product{}
+	row, err := p.db.DB.Query(ctx, "SELECT * FROM product_list")
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	for row.Next() {
+		product := &models.Product{}
+		err = row.Scan(&product.ID, &product.ProductName, &product.Price, &product.SellerID, &product.CategoryID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		products = append(products, product)
+	}
+	if row.Err() != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return products, nil
+}
+
+func (p *PostgresRepository) GetStockByID(ctx context.Context, product_id int) (int, error) {
 	const op = "repository.GetStockByID"
 	var stock int
-	err := p.db.DB.QueryRow(ctx, "SELECT stock FROM stock WHERE product_id = $1 AND seller_id = $2", product_id, seller_id).Scan(&stock)
+	err := p.db.DB.QueryRow(ctx, "SELECT stock FROM stock WHERE product_id = $1", product_id).Scan(&stock)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return -1, fmt.Errorf("%s: %w", op, ErrStockNotFound)
@@ -87,9 +108,9 @@ func (p *PostgresRepository) GetStockByID(ctx context.Context, product_id, selle
 }
 
 // Either add new stock row or add number to it. Returns id of an added row
-func (p *PostgresRepository) AddStockByID(ctx context.Context, seller_id, product_id, number int) (int, error) {
+func (p *PostgresRepository) AddStockByID(ctx context.Context, seller_id string, product_id, number int) (int, error) {
 	const op = "repository.AddStockByID"
-	stock, err := p.GetStockByID(ctx, product_id, seller_id)
+	stock, err := p.GetStockByID(ctx, product_id)
 	if err != nil {
 		if errors.Is(err, ErrStockNotFound) {
 			var id int
@@ -109,9 +130,9 @@ func (p *PostgresRepository) AddStockByID(ctx context.Context, seller_id, produc
 }
 
 // returns updated stock
-func (p *PostgresRepository) ReduceStock(ctx context.Context, seller_id, product_id, number int) (int, error) {
+func (p *PostgresRepository) ReduceStock(ctx context.Context, seller_id string, product_id, number int) (int, error) {
 	const op = "repository.ReduceStock"
-	stock, err := p.GetStockByID(ctx, seller_id, product_id)
+	stock, err := p.GetStockByID(ctx, product_id)
 	if err != nil {
 		return -1, fmt.Errorf("%s: %w", op, err)
 	}
@@ -187,7 +208,7 @@ func (p *PostgresRepository) GetProductByID(ctx context.Context, id int) (models
 	return product, nil
 }
 
-func (p *PostgresRepository) CheckProductExists(ctx context.Context, seller_id int, product_name string) (bool, error) {
+func (p *PostgresRepository) CheckProductExists(ctx context.Context, seller_id string, product_name string) (bool, error) {
 	const op = "repository.CheckProductExists"
 	var id int
 	err := p.db.DB.QueryRow(ctx, "SELECT id FROM product_list WHERE product_name = $1 AND seller_id = $2", product_name, seller_id).Scan(&id)
@@ -228,7 +249,7 @@ func (p *PostgresRepository) GetProductsByCategory(ctx context.Context, category
 	return products, nil
 }
 
-func (p *PostgresRepository) GetProductsBySellerID(ctx context.Context, seller_id int) ([]models.Product, error) {
+func (p *PostgresRepository) GetProductsBySellerID(ctx context.Context, seller_id string) ([]models.Product, error) {
 	const op = "repository.GetProductsBySellerID"
 	var products []models.Product
 
@@ -249,4 +270,25 @@ func (p *PostgresRepository) GetProductsBySellerID(ctx context.Context, seller_i
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	return products, nil
+}
+
+func (p *PostgresRepository) ReserveProducts(ctx context.Context, products []models.ProductsToReserve) error {
+	const op = "repository.ReserveProduct"
+	tx, err := p.db.DB.Begin(ctx)
+	defer tx.Rollback(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	for _, product := range products {
+		_, err := tx.Exec(ctx, "UPDATE stock SET stock= stock - $1, reserved_stock = reserved_stock + $1 WHERE product_id=$2", product.Stock, product.ID)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
 }

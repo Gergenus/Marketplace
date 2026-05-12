@@ -9,7 +9,7 @@ import (
 )
 
 type JWTinterface interface {
-	ParseToken(token string) (string, int, error)
+	ParseToken(token string) (string, string, error)
 }
 
 type JWTpkg struct {
@@ -28,9 +28,11 @@ var (
 	ErrUnauthorized = errors.New("unauthorized")
 	ErrClaimsFailed = errors.New("claims failed")
 	ErrTokenExpired = errors.New("token expired")
+	ErrConversion   = errors.New("conversion error")
 )
 
-func (j JWTpkg) ParseToken(token string) (string, int, error) {
+// returns role, uuid and error
+func (j JWTpkg) ParseToken(token string) (string, string, error) {
 	keyfunc := func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
@@ -42,19 +44,28 @@ func (j JWTpkg) ParseToken(token string) (string, int, error) {
 	tkn, err := jwt.Parse(token, keyfunc)
 	if err != nil {
 		j.log.Error("error parsing token", slog.String("error", err.Error()))
-		return "", -1, err
+		return "", "", err
 	}
 
 	claims, ok := tkn.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", -1, ErrClaimsFailed
+		return "", "", ErrClaimsFailed
 	}
 
 	if claims["exp"].(float64) < float64(time.Now().Unix()) {
-		return "", -1, ErrTokenExpired
+		return "", "", ErrTokenExpired
 	}
 
-	role := claims["role"].(string)
-	sellerID := claims["seller_id"].(float64)
-	return role, int(sellerID), nil
+	role, ok := claims["role"].(string)
+	if !ok {
+		j.log.Error("convesion error", slog.String("error", "claims[role].(string)"))
+		return "", "", ErrConversion
+	}
+	uuid, ok := claims["uuid"].(string)
+	if !ok {
+		j.log.Error("convesion error", slog.String("error", "claims[uuid].(string)"))
+		return "", "", ErrConversion
+	}
+
+	return role, uuid, nil
 }

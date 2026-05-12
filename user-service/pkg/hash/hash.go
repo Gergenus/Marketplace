@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,4 +18,14 @@ func HashPassword(password string) (string, error) {
 
 func CheckPassword(hashedPassword, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)) == nil
+}
+
+func HashToken(token string) string {
+	const op = "hash.HashPassword"
+	hash := sha256.Sum256([]byte(token))
+	return fmt.Sprintf("%x", hash)
+}
+
+func CheckToken(hashedToken, token string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hashedToken), []byte(token)) == nil
 }

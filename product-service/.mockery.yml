@@ -1,0 +1,17 @@
+all: False
+template: testify
+packages:
+  github.com/Gergenus/commerce/product-service/internal/repository:
+    interfaces:
+      RepositoryInterface:
+        config:
+          dir: "./internal/repository/mocks"
+          filename: "product_repository_mock.go"
+          pkgname: "mocks"
+  github.com/Gergenus/commerce/product-service/internal/service:
+    interfaces:
+      ServiceInterface:
+        config:
+          dir: "./internal/service/mocks"
+          filename: "product_service_mock.go"
+          pkgname: "mocks"
